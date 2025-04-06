@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BB84 Quantum Key Distribution Simulation</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <header class="text-center mb-10">
+            <h1 class="text-2xl md:text-3xl font-bold text-indigo-700">BB84 Quantum Key Distribution</h1>
+            <p class="text-lg text-gray-600">Presentation & Interactive Simulator</p>
+        </header>
+
+        <section id="presentation" class="mb-12 border-b pb-8">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-6 text-center">Project Overview</h2>
+            <div>
+                <h3 class="text-xl font-semibold text-gray-700">1. Introduction to QKD & BB84</h3>
+                <p class="text-gray-600">Quantum Key Distribution (QKD) leverages principles of quantum mechanics to establish a secure shared secret key between two parties (Alice and Bob) over an insecure channel, potentially monitored by an eavesdropper (Eve).</p>
+                <p class="text-gray-600">The BB84 protocol is the pioneering and most well-known QKD protocol.</p>
+            </div>
+            <!-- Additional content can be added here -->
+        </section>
+
+        <section id="simulator">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-6 text-center">Interactive Simulator</h2>
+            <div class="setup bg-gray-50 p-4 rounded-md shadow-sm mb-8 flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <div class="flex items-center space-x-2">
+                    <label for="num-qubits" class="font-medium text-gray-700">Number of Qubits:</label>
+                    <input type="number" id="num-qubits" value="20" min="4" max="100" class="w-20 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button id="btn-start" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow hover:bg-indigo-700 transition duration-150 ease-in-out">Start Simulation</button>
+                <button id="btn-eve" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white font-semibold rounded-md shadow hover:bg-red-700 transition duration-150 ease-in-out" disabled>Simulate Eve Interception</button>
+                <button id="btn-compare" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow hover:bg-green-700 transition duration-150 ease-in-out" disabled>Compare Bases & Get Key</button>
+            </div>
+            <!-- Additional simulator content can be added here -->
+        </section>
+
+        <script src="js/app.js"></script>
+        <script src="js/bb84.js"></script>
+        <script src="js/ui.js"></script>
+    </div>
+</body>
+</html>
