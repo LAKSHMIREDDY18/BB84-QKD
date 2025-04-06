@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BB84 Quantum Key Distribution Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for basis representation */
+        .basis-z { /* Rectilinear (+ basis) */
+            color: blue;
+            font-weight: bold;
+            padding: 0 1px; /* Add slight padding */
+        }
+        .basis-x { /* Diagonal (x basis) */
+            color: green;
+            font-weight: bold;
+            padding: 0 1px; /* Add slight padding */
+        }
+        /* Style for table cells indicating match/mismatch */
+        .match { background-color: #d1fae5; } /* Tailwind green-100 */
+        .mismatch { background-color: #fee2e2; } /* Tailwind red-100 */
+        .key-bit { font-weight: bold; }
+        /* Basic button styling improvement */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* Ensure canvas is responsive */
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Styling for content sections */
+        .content-section {
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            border-radius: 0.5rem; /* Rounded corners */
+            padding: 1.5rem; /* Padding */
+            margin-bottom: 2rem; /* Margin at the bottom */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+        }
+
+        .content-title {
+            color: #1f2937; /* Tailwind gray-800 */
+            font-size: 1.5rem; /* Larger font size */
+            font-weight: 600; /* Semibold */
+            margin-bottom: 1rem; /* Margin below the title */
+            border-bottom: 1px solid #e5e7eb; /* Light underline */
+            padding-bottom: 0.5rem;
+        }
+         .content-subtitle {
+            color: #374151; /* Tailwind gray-700 */
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* Semibold */
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-text {
+            color: #4b5563; /* Tailwind gray-600 */
+            line-height: 1.75; /* Improved line height for readability */
+            margin-bottom: 1rem;
+        }
+        .content-list {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            color: #4b5563; /* Tailwind gray-600 */
+            line-height: 1.75;
+        }
+        .content-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Style for the setup section */
+        .setup {
+             background-color: #f9fafb; /* Tailwind gray-50 */
+             padding: 1.5rem;
+             border-radius: 0.375rem; /* md */
+             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+             margin-bottom: 2rem;
+        }
+        /* Style for the result section */
+        .results {
+             background-color: #f9fafb; /* Tailwind gray-50 */
+             padding: 1.5rem;
+             border-radius: 0.375rem; /* md */
+             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+             margin-bottom: 2rem;
+        }
+        /* Style for the panels */
+        .panels > div {
+             background-color: #fff; /* White background for panels */
+             padding: 1rem;
+             border-radius: 0.5rem; /* lg */
+             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
+        }
+        /* Add specific panel background colors */
+        #alice-panel { background-color: #eff6ff; } /* blue-50 */
+        #bob-panel { background-color: #f0fdf4; } /* green-50 */
+        #eve-panel { background-color: #fef2f2; } /* red-50 */
+
+        /* Ensure table header is sticky (optional, but good for long tables) */
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f3f4f6; /* gray-100 */
+            z-index: 10;
+        }
+        /* Style for the show/hide button */
+         #show-table-btn {
+            transition: background-color 0.2s ease-in-out;
+         }
+
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-xl">
+
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 text-indigo-700">BB84 Quantum Key Distribution Simulation</h1>
+
+        <div class="content-section">
+            <h2 class="content-title">1. Introduction to Quantum Key Distribution (QKD)</h2>
+            <p class="content-text">
+                Quantum Key Distribution (QKD) is a revolutionary method for secure communication. Unlike classical cryptography which relies on mathematical complexity, QKD leverages the fundamental laws of quantum mechanics to guarantee the security of a secret key exchange between two parties, Alice and Bob.
+            </p>
+            <p class="content-text">
+                The core principle of QKD is that any attempt by an eavesdropper (Eve) to intercept or measure the quantum signals carrying the key will inevitably disturb those signals in a way that is detectable by Alice and Bob. This allows them to identify potential eavesdropping and discard the compromised key.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="content-title">2. The BB84 Protocol: A Cornerstone of QKD</h2>
+            <p class="content-text">
+                The BB84 protocol, developed by Charles Bennett and Gilles Brassard in 1984, is one of the earliest and most influential QKD protocols. It elegantly demonstrates how the principles of quantum superposition and measurement can be used for secure key distribution.
+            </p>
+            <h3 class="content-subtitle">Key Steps of BB84:</h3>
+            <ul class="content-list">
+                <li><strong>Qubit Encoding:</strong> Alice generates a random sequence of bits. For each bit, she randomly chooses one of two non-orthogonal quantum bases (Rectilinear: |0⟩, |1⟩ represented as <span class="basis-z">Z</span> and Diagonal: |+⟩, |−⟩ represented as <span class="basis-x">X</span>) to encode the bit into a qubit.</li>
+                <li><strong>Transmission:</strong> Alice sends these qubits to Bob through a quantum channel (e.g., optical fiber).</li>
+                <li><strong>Measurement:</strong> For each received qubit, Bob independently and randomly chooses one of the same two bases (<span class="basis-z">Z</span> or <span class="basis-x">X</span>) to perform a measurement.</li>
+                <li><strong>Basis Reconciliation:</strong> Alice and Bob communicate over a classical public channel and reveal the <em>basis</em> they used for each qubit (not the bit value). They discard the qubits for which their bases did not match and keep only those where the bases aligned.</li>
+                <li><strong>Key Sifting:</strong> The remaining bits form the "sifted key." Ideally, these bits should be identical for Alice and Bob.</li>
+                <li><strong>Error Detection (QBER):</strong> To check for eavesdropping, Alice and Bob publicly compare a random subset of their sifted key bits. Any significant discrepancy (measured by the Quantum Bit Error Rate - QBER) indicates the presence of an eavesdropper.</li>
+                <li><strong>Error Correction & Privacy Amplification:</strong> If the QBER is below a certain threshold, Alice and Bob apply classical error correction techniques to resolve any remaining errors and then use privacy amplification to distill a final, secure secret key about which Eve has negligible information. (These last steps are not explicitly simulated here).</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2 class="content-title">3. Algorithm Used: Quantum Approach</h2>
+            <p class="content-text">
+                While BB84 isn't a quantum algorithm in the sense of running on a quantum computer to solve a computational problem, its design fundamentally relies on quantum principles.
+            </p>
+            <h3 class="content-subtitle">Core Quantum Principles Utilized:</h3>
+            <ul class="content-list">
+                <li><strong>Quantum Superposition:</strong> Qubits can exist in a superposition of |0⟩ and |1⟩, allowing Alice to encode information in a way that isn't definitively determined until measurement.</li>
+                <li><strong>Non-Orthogonal Bases:</strong> The security of BB84 stems from the use of non-orthogonal bases (<span class="basis-z">Z</span> and <span class="basis-x">X</span>). Measuring a qubit in a basis that is not the one it was prepared in introduces a probabilistic outcome and potential disturbance.</li>
+                <li><strong>Quantum Measurement Disturbance:</strong> Any attempt to measure a quantum state generally disturbs it. Eve's interception and measurement of the qubits will introduce errors that Alice and Bob can detect via the QBER.</li>
+                <li><strong>No-Cloning Theorem:</strong> It is impossible to create an exact copy of an unknown quantum state. This prevents Eve from simply copying the qubits without disturbing them.</li>
+            </ul>
+             <h3 class="content-subtitle">Correctness & Accuracy:</h3>
+            <p class="content-text">
+                The correctness of BB84 lies in its ability to establish a shared secret key if no significant eavesdropping has occurred. The accuracy of the key depends on the noise in the quantum channel and the absence of malicious intervention. The error detection phase allows Alice and Bob to probabilistically determine if their transmission has been compromised.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="content-title">4. Logic and Application of Quantum Approaches</h2>
+            <p class="content-text">
+                While BB84 itself isn't a computational quantum algorithm, it is a crucial application of quantum mechanics for a fundamental task: secure communication. The logic is based on the inherent properties of quantum systems rather than computational steps.
+            </p>
+             <h3 class="content-subtitle">Application Domain:</h3>
+             <ul class="content-list">
+                <li><strong>Secure Communication Networks:</strong> BB84 can be used to generate encryption keys for highly secure communication links, protecting sensitive information from even the most powerful future computers.</li>
+                <li><strong>Government and Military Applications:</strong> Ensuring the confidentiality of state secrets and military communications.</li>
+                <li><strong>Financial Institutions:</strong> Protecting sensitive financial transactions and data.</li>
+                <li><strong>Critical Infrastructure:</strong> Securing control systems for power grids, water supplies, etc.</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2 class="content-title">5. Performance Analysis</h2>
+            <p class="content-text">
+                While the theoretical security of BB84 is strong, practical implementations face challenges related to optimization and efficiency.
+            </p>
+             <h3 class="content-subtitle">Key Considerations:</h3>
+             <ul class="content-list">
+                <li><strong>Circuit Depth (Conceptual):</strong> In a real quantum system, the complexity of preparing and measuring the qubits would relate to circuit depth. BB84 aims for relatively simple single-qubit operations.</li>
+                <li><strong>Qubit Usage:</strong> BB84 transmits one qubit per bit of the raw key. Efficiency improvements in QKD often focus on increasing the key rate per transmitted qubit.</li>
+                <li><strong>Scalability:</strong> Deploying QKD over long distances and to multiple users requires addressing challenges like photon loss in the quantum channel and the complexity of managing a QKD network. Repeaters and entanglement-based protocols are areas of research for improving scalability.</li>
+            </ul>
+        </div>
+
+         <div class="content-section">
+            <h2 class="content-title">6. Functionality (of this Simulator)</h2>
+            <p class="content-text">
+                This simulator provides a functional demonstration of the BB84 protocol's key steps and the impact of eavesdropping.
+            </p>
+             <h3 class="content-subtitle">Key Aspects:</h3>
+             <ul class="content-list">
+                <li><strong>Correctness:</strong> The simulation accurately models the probabilistic nature of quantum measurement in different bases and the disturbance caused by Eve's interception (if simulated).</li>
+                <li><strong>Completeness:</strong> It covers the essential stages of BB84: qubit preparation, transmission (with optional interception), measurement, basis reconciliation, key sifting, and error rate estimation (QBER). Error correction and privacy amplification are conceptually understood but not explicitly simulated here for simplicity.</li>
+                <li><strong>Output Accuracy:</strong> The calculated QBER and the resulting sifted keys reflect the probabilistic outcomes of the simulated quantum interactions. Repeated runs with the same parameters will likely yield different results due to the inherent randomness.</li>
+                <li><strong>Stability:</strong> The client-side JavaScript simulation runs within the browser and is stable for the intended number of qubits (4-100).</li>
+            </ul>
+        </div>
+
+         <div class="content-section">
+            <h2 class="content-title">7. Real-World Quantum Applications</h2>
+            <p class="content-text">
+                BB84 is not just a theoretical concept; it has significant real-world potential as a cornerstone of future secure communication infrastructure.
+            </p>
+             <h3 class="content-subtitle">Impact and Relevance:</h3>
+             <ul class="content-list">
+                <li><strong>Unbreakable Security (Theoretically):</strong> QKD offers security based on the laws of physics, not computational assumptions, making it resilient to attacks by future quantum computers (when combined with appropriate authentication).</li>
+                <li><strong>Long-Term Security:</strong> In a world where data needs to be protected for decades, QKD provides a potentially future-proof solution for key exchange.</li>
+                <li><strong>Integration with Existing Infrastructure:</strong> QKD systems can be integrated with existing classical communication networks to distribute keys for encrypting classical data.</li>
+                <li><strong>Driving Quantum Technology Development:</strong> Research and development in QKD are pushing the boundaries of quantum optics, single-photon sources/detectors, and communication technologies.</li>
+            </ul>
+        </div>
+        <div class="setup flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div class="flex items-center space-x-2">
+                <label for="num-qubits" class="font-medium text-gray-700 whitespace-nowrap">Number of Qubits:</label>
+                <input type="number" id="num-qubits" value="24" min="4" max="100" class="w-20 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <button id="btn-start" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                Start Simulation
+            </button>
+            <button id="btn-eve" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white font-semibold rounded-md shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out" disabled>
+                Simulate Eve Interception
+            </button>
+            <button id="btn-compare" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out" disabled>
+                Compare Bases & Get Key
+            </button>
+        </div>
+
+        <div class="panels grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div id="alice-panel">
+                <h2 class="text-xl font-semibold mb-3 text-blue-800">Alice (Sender)</h2>
+                <div class="space-y-2 text-sm">
+                    <p><span class="font-medium">Original Bits:</span> <span id="alice-bits" class="font-mono break-all block bg-white p-1 rounded">-</span></p>
+                    <p><span class="font-medium">Chosen Bases:</span> <span id="alice-bases" class="font-mono break-all block bg-white p-1 rounded">-</span></p>
+                    <p class="mt-4 font-medium">Sifted Key: <span id="alice-key" class="font-mono text-blue-900 font-bold block bg-white p-1 rounded">-</span></p>
+                </div>
+            </div>
+
+            <div id="bob-panel">
+                <h2 class="text-xl font-semibold mb-3 text-green-800">Bob (Receiver)</h2>
+                <div class="space-y-2 text-sm">
+                    <p><span class="font-medium">Chosen Bases:</span> <span id="bob-bases" class="font-mono break-all block bg-white p-1 rounded">-</span></p>
+                    <p><span class="font-medium">Measured Bits:</span> <span id="bob-results" class="font-mono break-all block bg-white p-1 rounded">-</span></p>
+                    <p class="mt-4 font-medium">Sifted Key: <span id="bob-key" class="font-mono text-green-900 font-bold block bg-white p-1 rounded">-</span></p>
+                </div>
+            </div>
+
+            <div id="eve-panel" style="display: none;">
+                <h2 class="text-xl font-semibold mb-3 text-red-800">Eve (Eavesdropper)</h2>
+                <div class="space-y-2 text-sm">
+                    <p><span class="font-medium">Chosen Bases:</span> <span id="eve-bases" class="font-mono break-all block bg-white p-1 rounded">-</span></p>
+                    <p><span class="font-medium">Measured Bits:</span> <span id="eve-measured" class="font-mono break-all block bg-white p-1 rounded">-</span></p>
+                    <p class="mt-2 text-xs text-red-700 italic">Eve measures Alice's qubits using her bases and resends new qubits to Bob based on her measurements and bases.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="results">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-700">Simulation Results</h2>
+            <div class="text-center mb-6">
+                <p class="text-lg font-medium">Quantum Bit Error Rate (QBER): <span id="qber" class="font-bold text-xl text-purple-700">N/A</span></p>
+                <p id="qber-message" class="text-sm text-gray-600 mt-1 h-5"></p> </div>
+
+            <div class="mb-6 h-64"> <canvas id="key-chart"></canvas>
+            </div>
+
+            <div class="text-center mb-4">
+                <button id="show-table-btn" class="px-3 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400" style="display: none;">
+                    Show Detailed Steps
+                </button>
+            </div>
+
+            <div id="key-table-container" class="overflow-x-auto max-h-96" style="display: none;"> <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alice Bit</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alice Basis</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-red-600">Eve Basis</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-red-600">Eve Measure</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bob Basis</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bob Result</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basis Match (A-B)</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sifted Bit (A)</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sifted Bit (B)</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="key-table-body" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const numQubitsInput = document.getElementById('num-qubits');
+        const startBtn = document.getElementById('btn-start');
+        const eveBtn = document.getElementById('btn-eve');
+        const compareBtn = document.getElementById('btn-compare');
+        const aliceBitsSpan = document.getElementById('alice-bits');
+        const aliceBasesSpan = document.getElementById('alice-bases');
+        const bobBasesSpan = document.getElementById('bob-bases');
+        const bobResultsSpan = document.getElementById('bob-results');
+        const evePanel = document.getElementById('eve-panel');
+        const eveBasesSpan = document.getElementById('eve-bases');
+        const eveMeasuredSpan = document.getElementById('eve-measured');
+        const aliceKeySpan = document.getElementById('alice-key');
+        const bobKeySpan = document.getElementById('bob-key');
+        const qberSpan = document.getElementById('qber');
+        const qberMessage = document.getElementById('qber-message');
+        const keyTableContainer = document.getElementById('key-table-container');
+        const keyTableBody = document.getElementById('key-table-body');
+        const showTableBtn = document.getElementById('show-table-btn');
+        const keyChartCtx = document.getElementById('key-chart').getContext('2d');
+        let keyChart = null; // To hold the chart instance
+
+        // --- Simulation State Variables ---
+        let n = 0; // Number of qubits
+        let aliceBits = [];
+        let aliceBases = [];
+        let bobBases = [];
+        let bobResults = [];
+        let eveBases = []; // Eve's chosen bases for measurement
+        let eveMeasured = []; // Bits Eve measured
+        let qubitsSentByAlice = null; // Holds the state Alice originally sends {bits, bases}
+        let qubitsReceivedByBob = null; // Holds the state Bob receives (either directly from Alice or via Eve) {bits, bases}
+        let aliceKey = [];
+        let bobKey = [];
+        let qber = 0;
+        let eveActive = false;
+        let simulationStarted = false;
+        let basesCompared = false;
+        let tableVisible = false; // State for table visibility
+
+        // --- BB84 Logic Functions ---
+
+        /**
+         * Generates a random bit (0 or 1).
+         * @returns {number} 0 or 1.
+         */
+        function generateRandomBit() {
+            return Math.floor(Math.random() * 2);
+        }
+
+        /**
+         * Generates a random basis ('Z' for rectilinear, 'X' for diagonal).
+         * @returns {string} 'Z' or 'X'.
+         */
+        function generateRandomBasis() {
+            // Representing Z (rectilinear, |0>, |1>) and X (diagonal, |+>, |->)
+            return Math.random() < 0.5 ? 'Z' : 'X';
+        }
+
+        /**
+         * Formats a basis string for display with appropriate styling.
+         * @param {string} basis - 'Z' or 'X'.
+         * @returns {string} HTML formatted basis string.
+         */
+        function formatBasis(basis) {
+            if (basis === 'Z') {
+                return '<span class="basis-z">Z</span>';
+            } else if (basis === 'X') {
+                return '<span class="basis-x">X</span>';
+            }
+            return '?'; // Handle unexpected values
+        }
+
+        /**
+         * Alice prepares her qubits (random bits and bases).
+         * @param {number} num - Number of qubits.
+         * @returns {object} Object containing Alice's original bits and bases {bits: number[], bases: string[]}.
+         */
+        function alicePreparation(num) {
+            aliceBits = Array.from({ length: num }, generateRandomBit);
+            aliceBases = Array.from({ length: num }, generateRandomBasis);
+            // This object represents the quantum state Alice sends.
+            // In a real simulation, this would be more complex (e.g., quantum state vectors).
+            // Here, we just store the bit value and the basis it was encoded in.
+            qubitsSentByAlice = {
+                bits: [...aliceBits], // Use copies
+                bases: [...aliceBases]
+            };
+            return qubitsSentByAlice;
+        }
+
+        /**
+         * Simulates Eve intercepting, measuring, and resending qubits.
+         * Eve measures Alice's qubit in a random basis and sends a *new* qubit
+         * to Bob prepared according to Eve's measurement result and basis.
+         * @param {number} num - Number of qubits.
+         * @param {object} aliceData - The original qubits sent by Alice {bits, bases}.
+         * @returns {object} Object containing the qubits Eve sends to Bob {bits, bases},
+         * plus Eve's own chosen bases and measurement results.
+         */
+        function simulateEveMeasurement(num, aliceData) {
+            eveBases = Array.from({ length: num }, generateRandomBasis);
+            eveMeasured = [];
+            let qubitsToSendToBob = { bits: [], bases: [] };
+
+            for (let i = 0; i < num; i++) {
+                const measurementBasisEve = eveBases[i];
+                const preparedBasisAlice = aliceData.bases[i];
+                const preparedBitAlice = aliceData.bits[i];
+                let measuredBitEve;
+
+                // Eve measures Alice's qubit in her chosen basis
+                if (preparedBasisAlice === measurementBasisEve) {
+                    measuredBitEve = preparedBitAlice; // Correct measurement if bases match
+                } else {
+                    // Basis mismatch: measurement outcome is random (50/50 for 0 or 1)
+                    // This disturbance is key to detecting Eve.
+                    measuredBitEve = generateRandomBit();
+                }
+                eveMeasured.push(measuredBitEve);
+
+                // Eve prepares a *new* qubit based on *her* measurement result
+                // and *her* measurement basis, and sends this to Bob.
+                qubitsToSendToBob.bits.push(measuredBitEve);
+                qubitsToSendToBob.bases.push(measurementBasisEve); // Bob receives a qubit polarized according to Eve's basis
+            }
+
+            // Update the global state for what Bob will receive
+            qubitsReceivedByBob = qubitsToSendToBob;
+
+            return {
+                qubitsForBob: qubitsToSendToBob,
+                eveBases: [...eveBases],
+                eveMeasured: [...eveMeasured]
+            };
+        }
+
+
+        /**
+         * Bob measures the received qubits using his randomly chosen bases.
+         * @param {number} num - Number of qubits.
+         * @param {object} receivedQubits - The qubits Bob receives {bits, bases}. This could be directly from Alice or tampered by Eve.
+         * @returns {object} Object containing Bob's chosen bases and measurement results {bases: string[], results: number[]}.
+         */
+        function bobMeasurement(num, receivedQubits) {
+            bobBases = Array.from({ length: num }, generateRandomBasis);
+            bobResults = [];
+            if (!receivedQubits || !receivedQubits.bits || !receivedQubits.bases || receivedQubits.bits.length !== num || receivedQubits.bases.length !== num) {
+                console.error("Invalid qubits received by Bob:", receivedQubits);
+                // Fill with placeholders to avoid crashing UI updates
+                bobResults = Array(num).fill('?');
+                return { bases: [...bobBases], results: [...bobResults] };
+            }
+
+            for (let i = 0; i < num; i++) {
+                const measurementBasisBob = bobBases[i];
+                const incomingBasis = receivedQubits.bases[i]; // Basis of the qubit Bob received
+                const incomingBit = receivedQubits.bits[i]; // Bit value encoded in that basis (as sent by Alice or Eve)
+                let measuredBitBob;
+
+                // Bob measures the qubit he received in his chosen basis
+                if (incomingBasis === measurementBasisBob) {
+                    // Bases match: Bob measures the bit value encoded in that basis correctly.
+                    measuredBitBob = incomingBit;
+                } else {
+                    // Bases mismatch: Bob's measurement outcome is random (50/50 for 0 or 1).
+                    measuredBitBob = generateRandomBit();
+                }
+                bobResults.push(measuredBitBob);
+            }
+            return {
+                bases: [...bobBases],
+                results: [...bobResults]
+            };
+        }
+
+        /**
+         * Extracts the sifted key based on matching bases between Alice and Bob.
+         * This happens *after* they publicly compare their basis choices.
+         * @param {Array<number>} sourceBits - The original bits (Alice's) or measured bits (Bob's).
+         * @param {Array<string>} alicePublicBases - The bases Alice used (announced publicly).
+         * @param {Array<string>} bobPublicBases - The bases Bob used (announced publicly).
+         * @returns {Array<number>} The sifted key bits.
+         */
+        function extractSiftedKey(sourceBits, alicePublicBases, bobPublicBases) {
+            let key = [];
+            // Basic validation
+            if (!sourceBits || !alicePublicBases || !bobPublicBases || sourceBits.length !== alicePublicBases.length || alicePublicBases.length !== bobPublicBases.length) {
+                console.error("Array length mismatch in extractSiftedKey. Source:", sourceBits?.length, "Alice Bases:", alicePublicBases?.length, "Bob Bases:", bobPublicBases?.length);
+                return []; // Return empty key on error
+            }
+            for (let i = 0; i < alicePublicBases.length; i++) {
+                // Keep the bit only if Alice and Bob used the same basis for this position
+                if (alicePublicBases[i] === bobPublicBases[i]) {
+                    key.push(sourceBits[i]);
+                }
+            }
+            return key;
+        }
+
+        /**
+         * Calculates the Quantum Bit Error Rate (QBER).
+         * Compares Alice's sifted key and Bob's sifted key.
+         * In a real protocol, they'd only compare a subset. Here we compare the whole key for demonstration.
+         * @param {Array<number>} keyA - Alice's sifted key.
+         * @param {Array<number>} keyB - Bob's sifted key.
+         * @returns {number} The QBER (fraction of mismatching bits). Returns -1 if keys are invalid or empty.
+         */
+        function calculateQBER(keyA, keyB) {
+            // Validate keys
+            if (!keyA || !keyB || keyA.length === 0 || keyA.length !== keyB.length) {
+                 console.warn("Cannot calculate QBER: Invalid or mismatched keys.", "Key A length:", keyA?.length, "Key B length:", keyB?.length);
+                return -1; // Indicate invalid input or no matching bases resulted in empty keys
+            }
+            let errors = 0;
+            for (let i = 0; i < keyA.length; i++) {
+                if (keyA[i] !== keyB[i]) {
+                    errors++;
+                }
+            }
+            return errors / keyA.length; // Calculate the error rate
+        }
+
+        // --- UI Update Functions ---
+
+        /** Clears all simulation data and resets the UI to its initial state */
+        function resetUI() {
+            // Reset state variables
+            n = 0;
+            aliceBits = [];
+            aliceBases = [];
+            bobBases = [];
+            bobResults = [];
+            eveBases = [];
+            eveMeasured = [];
+            qubitsSentByAlice = null;
+            qubitsReceivedByBob = null;
+            aliceKey = [];
+            bobKey = [];
+            qber = 0;
+            eveActive = false;
+            simulationStarted = false;
+            basesCompared = false;
+            tableVisible = false;
+
+            // Clear display panels
+            aliceBitsSpan.textContent = '-';
+            aliceBasesSpan.textContent = '-';
+            bobBasesSpan.textContent = '-';
+            bobResultsSpan.textContent = '-';
+            evePanel.style.display = 'none'; // Hide Eve's panel
+            eveBasesSpan.textContent = '-';
+            eveMeasuredSpan.textContent = '-';
+            aliceKeySpan.textContent = '-';
+            bobKeySpan.textContent = '-';
+            qberSpan.textContent = 'N/A';
+            qberSpan.classList.remove('text-red-600', 'text-orange-600', 'text-green-600');
+            qberSpan.classList.add('text-purple-700');
+            qberMessage.textContent = ''; // Clear QBER message
+            qberMessage.className = 'text-sm text-gray-600 mt-1 h-5'; // Reset message style
+
+
+            // Clear and hide the table
+            keyTableBody.innerHTML = ''; // Clear table body
+            keyTableContainer.style.display = 'none';
+            showTableBtn.style.display = 'none'; // Hide toggle button
+            showTableBtn.textContent = 'Show Detailed Steps';
+
+
+            // Destroy existing chart if it exists
+            if (keyChart) {
+                keyChart.destroy();
+                keyChart = null;
+            }
+            // Clear chart container background/placeholder if needed
+             keyChartCtx.clearRect(0, 0, keyChartCtx.canvas.width, keyChartCtx.canvas.height);
+
+
+            // Reset button states
+            startBtn.disabled = false;
+            eveBtn.disabled = true;  // Eve can only act after start
+            compareBtn.disabled = true; // Compare only possible after start
+            numQubitsInput.disabled = false; // Allow changing qubit count before start
+        }
+
+        /** Updates the display panels (Alice, Bob, Eve) with current simulation data */
+        function updatePanels() {
+            // Use innerHTML for spans that contain formatted basis HTML
+            aliceBitsSpan.textContent = simulationStarted ? aliceBits.join('') : '-';
+            aliceBasesSpan.innerHTML = simulationStarted ? aliceBases.map(formatBasis).join('') : '-';
+            bobBasesSpan.innerHTML = simulationStarted ? bobBases.map(formatBasis).join('') : '-';
+            bobResultsSpan.textContent = simulationStarted ? bobResults.join('') : '-';
+
+            // Update Eve's panel only if she is active
+            if (eveActive) {
+                evePanel.style.display = 'block'; // Show Eve's panel
+                eveBasesSpan.innerHTML = eveBases.map(formatBasis).join('');
+                eveMeasuredSpan.textContent = eveMeasured.join('');
+            } else {
+                evePanel.style.display = 'none'; // Hide Eve's panel
+            }
+
+            // Update sifted keys only after bases are compared
+            aliceKeySpan.textContent = basesCompared ? aliceKey.join('') : '-';
+            bobKeySpan.textContent = basesCompared ? bobKey.join('') : '-';
+        }
+
+        /** Generates the detailed table comparing steps for each qubit */
+        function generateDetailedTable() {
+            if (!simulationStarted) return; // Don't generate if simulation hasn't started
+
+            let tableHTML = '';
+            for (let i = 0; i < n; i++) {
+                const aliceBasis = aliceBases[i] ?? '?';
+                const bobBasis = bobBases[i] ?? '?';
+                const basisMatch = aliceBasis === bobBasis; // Alice's original basis vs Bob's measurement basis
+                const aliceSiftedBit = basisMatch ? (aliceBits[i] ?? '?') : '-';
+                const bobSiftedBit = basisMatch ? (bobResults[i] ?? '?') : '-';
+                const isError = basisMatch && aliceSiftedBit !== '-' && bobSiftedBit !== '-' && aliceSiftedBit !== bobSiftedBit;
+
+                tableHTML += `
+                    <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isError ? 'bg-red-100' : ''}">
+                        <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-500">${i}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono">${aliceBits[i] ?? '?'}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono">${formatBasis(aliceBasis)}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono text-red-700">${eveActive ? formatBasis(eveBases[i] ?? '?') : '-'}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono text-red-700">${eveActive ? (eveMeasured[i] ?? '?') : '-'}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono">${formatBasis(bobBasis)}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono">${bobResults[i] ?? '?'}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm ${basisMatch ? 'match' : 'mismatch'}">${basisMatch ? 'Yes' : 'No'}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono ${basisMatch ? 'key-bit' : ''}">${aliceSiftedBit}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-mono ${basisMatch ? 'key-bit' : ''}">${bobSiftedBit}</td>
+                        <td class="px-3 py-1 whitespace-nowrap text-sm font-bold ${isError ? 'text-red-600' : 'text-green-600'}">${basisMatch ? (isError ? 'ERR' : 'OK') : '-'}</td>
+                    </tr>`;
+            }
+            keyTableBody.innerHTML = tableHTML;
+            showTableBtn.style.display = 'inline-block'; // Show the toggle button now that table is generated
+            // Ensure table container visibility matches the current state
+            keyTableContainer.style.display = tableVisible ? 'block' : 'none';
+        }
+
+        /** Updates the QBER display and provides a contextual message */
+        function updateQBERDisplay() {
+            if (!basesCompared) {
+                qberSpan.textContent = 'N/A';
+                qberMessage.textContent = 'Compare bases first.';
+                return;
+            }
+
+            if (qber === -1) {
+                qberSpan.textContent = 'Error';
+                qberSpan.className = 'font-bold text-xl text-red-600'; // Reset classes and add red
+                qberMessage.textContent = 'Could not calculate QBER (likely no matching bases or key length mismatch).';
+                qberMessage.className = 'text-sm text-red-600 mt-1 h-5 font-semibold'; // Reset classes and add red
+            } else {
+                qberSpan.textContent = `${(qber * 100).toFixed(2)}%`;
+                qberSpan.className = 'font-bold text-xl text-purple-700'; // Reset classes and add purple
+
+                const qberThreshold = 0.15; // Example threshold for detecting Eve
+                if (qber > qberThreshold) {
+                    qberMessage.textContent = `High QBER (${(qber * 100).toFixed(1)}%) strongly suggests eavesdropping! Key should be discarded.`;
+                    qberMessage.className = 'text-sm text-red-600 mt-1 h-5 font-semibold';
+                } else if (eveActive && qber > 0) {
+                    qberMessage.textContent = `Non-zero QBER (${(qber * 100).toFixed(1)}%) detected. Consistent with Eve's interception.`;
+                    qberMessage.className = 'text-sm text-orange-600 mt-1 h-5 font-semibold';
+                } else if (qber === 0) {
+                     qberMessage.textContent = 'QBER is 0%. Keys match perfectly. Secure channel likely.';
+                     qberMessage.className = 'text-sm text-green-600 mt-1 h-5 font-semibold';
+                } else { // QBER > 0 but below threshold, and Eve wasn't simulated
+                    qberMessage.textContent = `Low QBER (${(qber * 100).toFixed(1)}%). Keys are mostly consistent. (May indicate minimal noise or Eve below threshold).`;
+                    qberMessage.className = 'text-sm text-gray-600 mt-1 h-5';
+                }
+            }
+        }
+
+        /** Updates or creates the key comparison chart using Chart.js */
+        function updateChart() {
+             if (!basesCompared) return; // Don't draw if bases not compared
+
+            const labels = Array.from({ length: aliceKey.length }, (_, i) => `${i + 1}`);
+
+            // Destroy previous chart instance if it exists
+            if (keyChart) {
+                keyChart.destroy();
+                keyChart = null; // Ensure it's nullified
+            }
+
+            // Don't draw chart if keys are empty (e.g., no matching bases)
+            if (aliceKey.length === 0) {
+                 // Optionally display a message on the canvas
+                const ctx = keyChartCtx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#6b7280'; // gray-500
+                ctx.font = '16px Inter, sans-serif';
+                ctx.fillText('No sifted key generated (no matching bases).', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                ctx.restore();
+                return;
+            }
+
+            // Create the new chart instance
+            keyChart = new Chart(keyChartCtx, {
+                type: 'line', // Use line chart to show differences clearly
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Alice's Sifted Key",
+                            data: aliceKey,
+                            borderColor: 'rgba(59, 130, 246, 0.8)', // Tailwind blue-500
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            stepped: true, // Makes it look like digital steps
+                            pointRadius: 4,
+                            pointBackgroundColor: 'rgba(37, 99, 235, 1)', // Tailwind blue-600
+                            tension: 0.1 // Slight curve for visual appeal if not stepped
+                        },
+                        {
+                            label: "Bob's Sifted Key",
+                            data: bobKey,
+                            borderColor: 'rgba(16, 185, 129, 0.8)', // Tailwind emerald-500 (was red, changed for better A/B visual)
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5], // Dashed line for Bob for distinction
+                            stepped: true,
+                            pointRadius: 4,
+                            pointStyle: 'rect', // Different point style
+                            pointBackgroundColor: 'rgba(5, 150, 105, 1)', // Tailwind emerald-600
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Important for fixed height container
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: -0.1, // Add padding below 0
+                            max: 1.1, // Add padding above 1
+                            ticks: {
+                                stepSize: 1, // Only show 0 and 1
+                                callback: function(value) {
+                                    if (value === 0 || value === 1) return value;
+                                    return null; // Hide other ticks
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Bit Value'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Sifted Key Bit Index'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Alice vs Bob Sifted Key Comparison',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            mode: 'index', // Show tooltips for both datasets at the same index
+                            intersect: false, // Tooltip appears when hovering anywhere vertically above the point
+                            callbacks: {
+                                // Customize tooltip label
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y;
+                                    }
+                                    // Indicate mismatch in tooltip
+                                    if (context.datasetIndex === 1) { // If it's Bob's key
+                                         const aliceVal = context.chart.data.datasets[0].data[context.dataIndex];
+                                         const bobVal = context.parsed.y;
+                                         if (aliceVal !== bobVal) {
+                                             label += ' (Mismatch!)';
+                                         }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index', // Use index mode for interaction
+                        intersect: false
+                    },
+                    animation: {
+                        duration: 500 // Add a subtle animation
+                    }
+                }
+            });
+        }
+
+
+        // --- Event Listeners ---
+
+        /** Handles the Start Simulation button click */
+        startBtn.addEventListener('click', () => {
+            resetUI(); // Clear previous run data and UI elements
+            n = parseInt(numQubitsInput.value); // Get number of qubits from input
+
+            // Validate input
+            if (isNaN(n) || n < 4 || n > 100) {
+                // Use a more user-friendly alert or message box if possible
+                alert("Please enter a number of qubits between 4 and 100.");
+                resetUI(); // Ensure UI is reset if input was invalid
+                return;
+            }
+
+            simulationStarted = true;
+            eveActive = false; // Start without Eve by default
+            basesCompared = false; // Bases haven't been compared yet
+
+            // 1. Alice prepares her qubits (bits and bases)
+            const aliceData = alicePreparation(n);
+            // Initially, Bob receives directly from Alice (no Eve)
+            qubitsReceivedByBob = aliceData;
+
+            // 2. Bob chooses his bases and measures the qubits he received
+            const bobData = bobMeasurement(n, qubitsReceivedByBob);
+            // Store Bob's chosen bases and measurement results
+            bobBases = bobData.bases;
+            bobResults = bobData.results;
+
+            // 3. Update UI panels to show initial state (Alice's prep, Bob's measurements)
+            updatePanels();
+
+            // 4. Update button states
+            startBtn.disabled = true; // Can't restart until reset (or implement reset button)
+            numQubitsInput.disabled = true; // Lock qubit count for this run
+            eveBtn.disabled = false; // Eve can now intercept
+            compareBtn.disabled = false; // Bases can now be compared
+        });
+
+        /** Handles the Simulate Eve Interception button click */
+        eveBtn.addEventListener('click', () => {
+            if (!simulationStarted || basesCompared || eveActive) {
+                // Prevent Eve simulation if not started, already compared, or Eve already active
+                return;
+            }
+            eveActive = true; // Mark Eve as active for this simulation run
+
+            // 1. Simulate Eve's actions: choose bases, measure Alice's qubits, prepare new qubits for Bob
+            const eveResult = simulateEveMeasurement(n, qubitsSentByAlice); // Use original Alice data
+            eveBases = eveResult.eveBases;
+            eveMeasured = eveResult.eveMeasured;
+            // qubitsReceivedByBob is updated inside simulateEveMeasurement
+
+            // 2. Bob *now* performs his measurement on the qubits *sent by Eve*
+            // We need to re-run Bob's measurement process with the tampered qubits.
+            // Bob keeps his original basis choices.
+            const bobDataAfterEve = bobMeasurement(n, qubitsReceivedByBob);
+            // Update Bob's results based on measuring Eve's qubits
+            bobResults = bobDataAfterEve.results; // Bob's bases remain the same
+
+            // 3. Update UI panels to show Eve's actions and Bob's potentially altered results
+            updatePanels();
+
+            // 4. Disable Eve button after she has acted
+            eveBtn.disabled = true;
+            // Compare button remains enabled
+        });
+
+        /** Handles the Compare Bases & Get Key button click */
+        compareBtn.addEventListener('click', () => {
+            if (!simulationStarted || basesCompared) {
+                 // Prevent comparison if simulation hasn't started or bases already compared
+                return;
+            }
+            basesCompared = true; // Mark bases as compared
+
+            // 1. Extract sifted keys for Alice and Bob based on basis matches
+            aliceKey = extractSiftedKey(aliceBits, aliceBases, bobBases);
+            bobKey = extractSiftedKey(bobResults, aliceBases, bobBases); // Bob uses his results
+
+            // 2. Calculate the Quantum Bit Error Rate (QBER)
+            qber = calculateQBER(aliceKey, bobKey);
+
+            // 3. Update UI: display sifted keys, QBER, and QBER message
+            updatePanels(); // Show keys in panels
+            updateQBERDisplay(); // Show QBER value and interpretation
+
+            // 4. Generate the detailed comparison table
+            generateDetailedTable(); // Create table rows
+
+            // 5. Update the comparison chart
+            updateChart(); // Draw the chart comparing keys
+
+            // 6. Update button states: disable Eve and Compare after comparison
+            eveBtn.disabled = true;
+            compareBtn.disabled = true;
+            startBtn.disabled = false; // Allow starting a new simulation
+            numQubitsInput.disabled = false; // Allow changing qubit count for next run
+        });
+
+        /** Handles the Show/Hide Detailed Steps button click */
+        showTableBtn.addEventListener('click', () => {
+            tableVisible = !tableVisible; // Toggle visibility state
+            keyTableContainer.style.display = tableVisible ? 'block' : 'none'; // Show/hide the container
+            showTableBtn.textContent = tableVisible ? 'Hide Detailed Steps' : 'Show Detailed Steps'; // Update button text
+        });
+
+        // --- Initial Setup ---
+        // Reset the UI when the page loads to ensure a clean state
+        window.addEventListener('load', resetUI);
+
+    </script>
+</body>
+</html>
